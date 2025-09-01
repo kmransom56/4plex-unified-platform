@@ -1,0 +1,261 @@
+version: '3.8'
+
+services:
+  # Unified Platform Services
+  unified-api:
+    build:
+      context: .
+      dockerfile: Dockerfile.unified-api
+    container_name: 4plex-unified-api
+    ports:
+      - "11070:11070"
+    environment:
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/unified_properties
+      - REDIS_URL=redis://redis:6379
+      - NEO4J_URL=bolt://neo4j:7687
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD}
+      - DISCOVERY_API_URL=http://discovery-engine:11050
+      - VALUATION_API_URL=http://valuation-engine:11060
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - ./data/logs:/app/logs
+      - ./data/uploads:/app/uploads
+    depends_on:
+      - postgres
+      - redis
+      - neo4j
+      - discovery-engine
+      - valuation-engine
+    networks:
+      - 4plex-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11070/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Discovery Engine (from foreclosure research)
+  discovery-engine:
+    build:
+      context: ../4plex-foreclosure-research
+      dockerfile: Dockerfile
+    container_name: 4plex-discovery-engine
+    ports:
+      - "11050:11050"
+    environment:
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/unified_properties
+      - REDIS_URL=redis://redis:6379
+      - NEO4J_URL=bolt://neo4j:7687
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - PROPERTYRADAR_API_KEY=${PROPERTYRADAR_API_KEY}
+      - REALESTATE_API_KEY=${REALESTATE_API_KEY}
+      - ATTOM_API_KEY=${ATTOM_API_KEY}
+    volumes:
+      - ./data/discovery:/app/data
+      - ./data/logs:/app/logs
+    depends_on:
+      - postgres
+      - redis
+      - neo4j
+    networks:
+      - 4plex-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11050/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Valuation Engine (from investment platform)
+  valuation-engine:
+    build:
+      context: ../4plex-investment-platform/backend
+      dockerfile: Dockerfile
+    container_name: 4plex-valuation-engine
+    ports:
+      - "11060:11060"
+    environment:
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/unified_properties
+      - REDIS_URL=redis://redis:6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - ./data/valuation:/app/data
+      - ./data/documents:/app/documents
+      - ./data/exports:/app/exports
+      - ./data/logs:/app/logs
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - 4plex-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11060/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Unified Dashboard (React)
+  unified-dashboard:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dashboard
+    container_name: 4plex-unified-dashboard
+    ports:
+      - "11071:80"
+    environment:
+      - REACT_APP_API_BASE_URL=http://localhost:11070/api
+      - REACT_APP_DISCOVERY_API_URL=http://localhost:11050/api
+      - REACT_APP_VALUATION_API_URL=http://localhost:11060/api
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html
+    depends_on:
+      - unified-api
+    networks:
+      - 4plex-network
+    restart: unless-stopped
+
+  # Database Services
+  postgres:
+    image: postgres:15-alpine
+    container_name: 4plex-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=unified_properties
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
+    networks:
+      - 4plex-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d unified_properties"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    container_name: 4plex-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    volumes:
+      - redis_data:/data
+    networks:
+      - 4plex-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  neo4j:
+    image: neo4j:5.15-community
+    container_name: 4plex-neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/${NEO4J_PASSWORD}
+      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*
+      - NEO4J_dbms_memory_heap_initial_size=2g
+      - NEO4J_dbms_memory_heap_max_size=4g
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    networks:
+      - 4plex-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "cypher-shell", "-u", "neo4j", "-p", "${NEO4J_PASSWORD}", "RETURN 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Monitoring Services
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: 4plex-prometheus
+    ports:
+      - "11073:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - 4plex-network
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: 4plex-grafana
+    ports:
+      - "11072:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - 4plex-network
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+  # Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: 4plex-nginx
+    ports:
+      - "11075:80"
+      - "11076:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./data/logs/nginx:/var/log/nginx
+    depends_on:
+      - unified-api
+      - unified-dashboard
+      - discovery-engine
+      - valuation-engine
+    networks:
+      - 4plex-network
+    restart: unless-stopped
+
+# Volumes
+volumes:
+  postgres_data:
+    name: 4plex_postgres_data
+  redis_data:
+    name: 4plex_redis_data
+  neo4j_data:
+    name: 4plex_neo4j_data
+  neo4j_logs:
+    name: 4plex_neo4j_logs
+  prometheus_data:
+    name: 4plex_prometheus_data
+  grafana_data:
+    name: 4plex_grafana_data
+
+# Networks
+networks:
+  4plex-network:
+    name: 4plex-network
+    driver: bridge
