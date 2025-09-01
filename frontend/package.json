@@ -1,0 +1,17 @@
+{
+  "name": "4plex-unified-dashboard",
+  "version": "1.0.0",
+  "description": "Unified dashboard for 4-Plex investment platform",
+  "scripts": {
+    "build": "echo 'Building dashboard...' && mkdir -p dist && echo '<h1>4-Plex Unified Dashboard</h1><p>Dashboard is being built...</p>' > dist/index.html",
+    "dev": "echo 'Starting dev server...'",
+    "start": "npm run dev"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "vite": "^4.4.0"
+  }
+}

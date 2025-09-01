@@ -71,7 +71,7 @@ class DiscoveryStartRequest(BaseModel):
 
 class AnalysisRequest(BaseModel):
     property_id: str
-    priority: str = Field(default="normal", regex="^(low|normal|high|urgent)$")
+    priority: str = Field(default="normal", pattern="^(low|normal|high|urgent)$")
     include_market_analysis: bool = Field(default=True)
     include_risk_assessment: bool = Field(default=True)
 

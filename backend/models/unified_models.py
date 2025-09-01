@@ -67,9 +67,7 @@ class Priority(str, Enum):
 class BasePropertyModel(BaseModel):
     """Base model with common fields"""
     
-    class Config:
-        orm_mode = True
-        use_enum_values = True
+    model_config = {"from_attributes": True, "use_enum_values": True}
 
 class UnifiedProperty(BasePropertyModel):
     """Unified property model combining discovery and valuation data"""
