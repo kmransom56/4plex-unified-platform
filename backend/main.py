@@ -19,6 +19,7 @@ import sys
 
 # Add backend to path for imports
 sys.path.append(str(Path(__file__).parent))
+sys.path.append(str(Path(__file__).parent.parent))  # Add root directory for grants imports
 
 # Unified imports (will be created)
 from integration.unified_api import UnifiedAPI
@@ -33,6 +34,15 @@ from models.unified_models import (
 from common.config import get_settings
 from common.logging_config import setup_logging
 from common.database import get_database_manager
+
+# Grant research integration
+try:
+    from grants.api.grant_endpoints import router as grants_router
+    GRANTS_AVAILABLE = True
+    logger.info("✅ Grants research module loaded successfully")
+except ImportError as e:
+    logger.warning(f"⚠️ Grants module not available: {e}")
+    GRANTS_AVAILABLE = False
 
 # Configuration
 settings = get_settings()
@@ -401,11 +411,31 @@ async def trigger_data_sync():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# Include grants router if available
+if GRANTS_AVAILABLE:
+    app.include_router(grants_router, prefix="/api/v1/grants", tags=["grants"])
+    logger.info("✅ Grants API endpoints registered successfully")
+
 @app.get("/api/system/metrics")
 async def get_system_metrics():
     """Get comprehensive system metrics"""
     try:
         metrics = await unified_api.get_system_metrics()
+        
+        # Add grants module status if available
+        if GRANTS_AVAILABLE:
+            metrics["grants_module"] = {
+                "status": "available",
+                "endpoints": [
+                    "/api/v1/grants/research/start",
+                    "/api/v1/grants/match/property/{property_id}",
+                    "/api/v1/grants/analytics/county/{county}",
+                    "/api/v1/grants/applications/create"
+                ]
+            }
+        else:
+            metrics["grants_module"] = {"status": "not_available"}
+            
         return JSONResponse(content=metrics)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
