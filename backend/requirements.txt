@@ -74,7 +74,7 @@ dynaconf==3.2.4
 # Security and authentication
 passlib[bcrypt]==1.7.4
 python-jose[cryptography]==3.3.0
-cryptography==41.0.8
+cryptography==44.0.1
 
 # Email and notifications
 emails==0.6.2
