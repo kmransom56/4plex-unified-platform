@@ -339,7 +339,7 @@ ujson==5.10.0
 unstructured==0.16.17
 unstructured-client==0.32.3
 uritemplate==4.1.1
-urllib3==2.4.0
+urllib3==2.5.0
 uvicorn==0.34.0
 uvloop==0.21.0
 validators==0.34.0
