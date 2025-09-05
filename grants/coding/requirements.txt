@@ -146,7 +146,7 @@ jsonpointer==3.0.0
 jsonref==1.1.0
 kubernetes==32.0.1
 langchain==0.3.24
-langchain-community==0.3.23
+langchain-community==0.3.27
 langchain-core==0.3.60
 langchain-text-splitters==0.3.8
 langdetect==1.0.9
