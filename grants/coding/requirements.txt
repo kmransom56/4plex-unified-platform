@@ -18,7 +18,7 @@ asgiref==3.8.1
 async-timeout==5.0.1
 asyncer==0.0.8
 attrs==25.3.0
-authlib==1.4.1
+authlib==1.6.4
 autogen==0.9.1.post0
 autogen-agentchat==0.4.9.3
 autogen-core==0.4.9.3
