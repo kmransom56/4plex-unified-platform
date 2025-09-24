@@ -231,7 +231,7 @@ pgvector==0.4.0
 pillow==11.1.0
 pinecone==6.0.2
 pinecone-plugin-interface==0.0.7
-pip==25.1.1
+pip==25.2
 platformdirs==4.3.8
 playwright==1.49.1
 pluggy==1.6.0
