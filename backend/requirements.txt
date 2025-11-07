@@ -39,7 +39,7 @@ langchain-openai==0.0.2
 selenium==4.15.2
 beautifulsoup4==4.12.2
 requests==2.31.0
-scrapy==2.11.0
+scrapy==2.13.3
 playwright==1.40.0
 
 # Document processing
