@@ -2,16 +2,26 @@
   "name": "4plex-unified-dashboard",
   "version": "1.0.0",
   "description": "Unified dashboard for 4-Plex investment platform",
+  "type": "module",
   "scripts": {
-    "build": "echo 'Building dashboard...' && mkdir -p dist && echo '<h1>4-Plex Unified Dashboard</h1><p>Dashboard is being built...</p>' > dist/index.html",
-    "dev": "echo 'Starting dev server...'",
-    "start": "npm run dev"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "vite"
   },
   "dependencies": {
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.16.0",
+    "axios": "^1.5.0",
+    "recharts": "^2.8.0",
+    "@mui/material": "^5.14.0",
+    "@mui/icons-material": "^5.14.0",
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0"
   },
   "devDependencies": {
-    "vite": "^4.4.0"
+    "@vitejs/plugin-react": "^4.0.4",
+    "vite": "^4.4.9"
   }
 }
