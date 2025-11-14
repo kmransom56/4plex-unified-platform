@@ -12,6 +12,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Depends, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from datetime import datetime, timedelta
 import os
@@ -66,6 +67,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files for frontend
+frontend_dist = Path(__file__).parent.parent / "frontend" / "dist"
+if frontend_dist.exists():
+    app.mount("/assets", StaticFiles(directory=str(frontend_dist / "assets")), name="assets")
+    logger.info(f"✅ Static files mounted from {frontend_dist}")
+else:
+    logger.warning(f"⚠️ Frontend dist directory not found at {frontend_dist}")
 
 # Global instances
 unified_api: Optional[UnifiedAPI] = None
