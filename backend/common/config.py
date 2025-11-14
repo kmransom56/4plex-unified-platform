@@ -28,8 +28,8 @@ class Settings(BaseSettings):
     # Service URLs
     discovery_endpoint: str = "http://discovery-engine:11050"
     valuation_endpoint: str = "http://valuation-engine:11060"
-    
-    model_config = {"env_file": ".env", "case_sensitive": False}
+
+    model_config = {"env_file": ".env", "case_sensitive": False, "extra": "allow"}
 
 def get_settings() -> Settings:
     """Get application settings"""
