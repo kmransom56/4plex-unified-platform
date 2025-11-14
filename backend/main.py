@@ -35,6 +35,11 @@ from common.config import get_settings
 from common.logging_config import setup_logging
 from common.database import get_database_manager
 
+# Configuration
+settings = get_settings()
+setup_logging()
+logger = logging.getLogger(__name__)
+
 # Grant research integration
 try:
     from grants.api.grant_endpoints import router as grants_router
@@ -43,11 +48,6 @@ try:
 except ImportError as e:
     logger.warning(f"⚠️ Grants module not available: {e}")
     GRANTS_AVAILABLE = False
-
-# Configuration
-settings = get_settings()
-setup_logging()
-logger = logging.getLogger(__name__)
 
 # FastAPI application
 app = FastAPI(
