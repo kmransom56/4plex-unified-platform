@@ -92,7 +92,7 @@ firecrawl-py==1.12.0
 fix-busted-json==0.0.18
 flask==3.1.1
 flatbuffers==25.2.10
-fonttools==4.58.0
+fonttools==4.61.0
 fpdf2==2.8.2
 frozenlist==1.6.0
 fs==2.4.16
